@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30011.22
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "PolyCoder.IO", "PolyCoder.IO\PolyCoder.IO.fsproj", "{F53951E8-B168-4079-9143-218A302C2ECE}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "PolyCoder.IO.Tests", "PolyCoder.IO.Tests\PolyCoder.IO.Tests.fsproj", "{A14F7477-477B-41C5-80D8-33D561BB6E77}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F53951E8-B168-4079-9143-218A302C2ECE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F53951E8-B168-4079-9143-218A302C2ECE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F53951E8-B168-4079-9143-218A302C2ECE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F53951E8-B168-4079-9143-218A302C2ECE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A14F7477-477B-41C5-80D8-33D561BB6E77}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A14F7477-477B-41C5-80D8-33D561BB6E77}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A14F7477-477B-41C5-80D8-33D561BB6E77}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A14F7477-477B-41C5-80D8-33D561BB6E77}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {5EA41D1A-088D-485B-BF77-D9E79E7E1514}
+	EndGlobalSection
+EndGlobal
