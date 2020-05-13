@@ -22,8 +22,12 @@
 
   <ItemGroup>
     <Compile Include="IO.Text.fs" />
+    <Compile Include="TextReader.Csv.fs" />
+    <Compile Include="DataSets.Binary.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
+
+  <ItemGroup />
 
   <ItemGroup>
     <ProjectReference Include="..\PolyCoder.IO\PolyCoder.IO.fsproj" />

@@ -218,6 +218,18 @@ module TextWriter =
       |> Stream.createFileWith bufferSize
       |> fromStream compressionLevel bufferSize encoding
   
+module Binary =
+  let unsignedSize value =
+    if value <= uint64 Byte.MaxValue then 0uy
+    elif value <= uint64 UInt16.MaxValue then 1uy
+    elif value <= uint64 UInt32.MaxValue then 2uy
+    else 3uy
+
+  let signedSize value =
+    if abs (value) <= int64 SByte.MaxValue then 0uy
+    elif abs (value) <= int64 Int16.MaxValue then 1uy
+    elif abs (value) <= int64 Int32.MaxValue then 2uy
+    else 3uy
 
 module BinaryReader =
   let ofStream encoding (stream: Stream) =
@@ -235,6 +247,18 @@ module BinaryReader =
     filePath
       |> Stream.readFileWith bufferSize
       |> fromStream (File.isGZipped filePath) bufferSize encoding
+
+  let readUnsigned (size: byte) =
+    if size = 0uy then fun (reader: BinaryReader) -> reader.ReadByte() |> uint64
+    elif size = 1uy then fun (reader: BinaryReader) -> reader.ReadUInt16() |> uint64
+    elif size = 2uy then fun (reader: BinaryReader) -> reader.ReadUInt32() |> uint64
+    else fun (reader: BinaryReader) -> reader.ReadUInt64()
+
+  let readSigned (size: byte) =
+    if size = 0uy then fun (reader: BinaryReader) -> reader.ReadSByte() |> int64
+    elif size = 1uy then fun (reader: BinaryReader) -> reader.ReadInt16() |> int64
+    elif size = 2uy then fun (reader: BinaryReader) -> reader.ReadInt32() |> int64
+    else fun (reader: BinaryReader) -> reader.ReadInt64()
 
 module BinaryWriter =
   let ofStream encoding (stream: Stream) =
@@ -254,3 +278,15 @@ module BinaryWriter =
     filePath
       |> Stream.createFileWith bufferSize
       |> fromStream compressionLevel bufferSize encoding
+
+  let writeUnsigned (size: byte) =
+    if size = 0uy then fun (value: uint64) (writer: BinaryWriter) -> writer.Write(byte value)
+    elif size = 1uy then fun (value: uint64) (writer: BinaryWriter) -> writer.Write(uint16 value)
+    elif size = 2uy then fun (value: uint64) (writer: BinaryWriter) -> writer.Write(uint32 value)
+    else fun (value: uint64) (writer: BinaryWriter) -> writer.Write(value)
+
+  let writeSigned (size: byte) =
+    if size = 0uy then fun (value: int64) (writer: BinaryWriter) -> writer.Write(int8 value)
+    elif size = 1uy then fun (value: int64) (writer: BinaryWriter) -> writer.Write(int16 value)
+    elif size = 2uy then fun (value: int64) (writer: BinaryWriter) -> writer.Write(int32 value)
+    else fun (value: int64) (writer: BinaryWriter) -> writer.Write(value)

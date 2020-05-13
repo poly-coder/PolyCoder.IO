@@ -4,13 +4,19 @@ open System.IO
 open System.Text
 
 module TextReader =
-  type OnColumnParsedDelegate = delegate of int * inref<ReadOnlySpan<char>> -> unit
+  type OnRowItemParsed = delegate of int * inref<ReadOnlySpan<char>> -> unit
+  type OnValueParsed = delegate of inref<ReadOnlySpan<char>> -> unit
 
   type TableParserEvents = {
-    setColumnName: OnColumnParsedDelegate
-    setColumnValue: OnColumnParsedDelegate
+    setColumnName: OnRowItemParsed
+    setColumnValue: OnRowItemParsed
     newRow: unit -> unit
     finish: unit -> unit
+  }
+
+  type ColumnParserEvents = {
+    setColumnName: OnValueParsed
+    addColumnValue: OnValueParsed
   }
 
   module Csv =
@@ -22,7 +28,6 @@ module TextReader =
       trimValues: bool
       separator: string
       newLine: string
-      encoding: Encoding
     }
 
     module CsvFormat =
@@ -33,7 +38,6 @@ module TextReader =
         trimValues = true
         separator = ","
         newLine = "\n"
-        encoding = Encoding.UTF8
       }
 
       let withHasHeaders hasHeaders format = { format with hasHeaders = hasHeaders }
@@ -42,7 +46,6 @@ module TextReader =
       let withTrimValues trimValues format = { format with trimValues = trimValues }
       let withSeparator separator format = { format with separator = separator }
       let withNewLine newLine format = { format with newLine = newLine }
-      let withEncoding encoding format = { format with encoding = encoding }
 
     module Internals =
       type CsvInternalOptions = {
@@ -56,11 +59,12 @@ module TextReader =
           separatorChars = format.separator.ToCharArray()
         }
 
-      let splitCsvRow options (onColumn: OnColumnParsedDelegate) (lineSpan: ReadOnlySpan<char>) =
-        let mutable remaining = if options.format.trimLines then lineSpan else lineSpan.Trim()
+      let splitCsvRow options onValidRow (onColumn: OnRowItemParsed) (lineSpan: ReadOnlySpan<char>) =
+        let mutable remaining = if options.format.trimLines then lineSpan.Trim() else lineSpan
         if not options.format.skipEmptyLines || remaining.Length > 0 then
           let mutable columnIndex = 0
           let separatorSpan = ReadOnlySpan(options.separatorChars)
+          onValidRow()
 
           while remaining.IsEmpty |> not do
             let index = remaining.IndexOf separatorSpan
@@ -102,13 +106,59 @@ module TextReader =
           let lineSpan = line.AsSpan()
 
           if not headersWereRead then
-            splitCsvRow internalOptions options.events.setColumnName lineSpan
+            splitCsvRow internalOptions ignore options.events.setColumnName lineSpan
             headersWereRead <- true
           else
-            options.events.newRow()
-            splitCsvRow internalOptions options.events.setColumnName lineSpan
+            splitCsvRow internalOptions options.events.newRow options.events.setColumnValue lineSpan
         
         | _ -> line <- null
 
       options.events.finish()
+    }
+
+    type ParseCsvColumnsOptions = {
+      format: CsvFormat
+      columns: ColumnParserEvents[]
+    }
+    
+    let parseCsvColumns options reader = async {
+      let mutable currentRow = 0
+      let mutable currentColumn = -1
+
+      let checkNextRow() =
+        if currentColumn + 1 <> options.columns.Length then
+          invalidOp (sprintf "Row #%d has the wrong number of columns. Expected %d but found %d" currentRow options.columns.Length (currentColumn + 1))
+
+      let checkNextColumn index =
+        if currentColumn + 1 <> index then
+          invalidOp (sprintf "Row #%d is trying to skip columns. Expected %d but found %d" currentRow (currentColumn + 1) index)
+        if index >= options.columns.Length then
+          invalidOp (sprintf "Row #%d has the wrong number of columns. Expected %d but found %d" currentRow options.columns.Length (index + 1))
+
+      let newRow () =
+        checkNextRow()
+        currentColumn <- -1
+        currentRow <- currentRow + 1
+
+      let finish () =
+        checkNextRow()
+
+      let setColumnName = OnRowItemParsed(fun index (nameSpan: inref<ReadOnlySpan<char>>) ->
+        checkNextColumn index
+        currentColumn <- index
+        options.columns.[index].setColumnName.Invoke(&nameSpan))
+
+      let setColumnValue = OnRowItemParsed(fun index (valueSpan: inref<ReadOnlySpan<char>>) ->
+        checkNextColumn index
+        currentColumn <- index
+        options.columns.[index].addColumnValue.Invoke(&valueSpan))
+
+      let events: TableParserEvents = {
+        finish = finish
+        newRow = newRow
+        setColumnName = setColumnName
+        setColumnValue = setColumnValue
+      }
+
+      do! parseCsv { format = options.format; events = events } reader
     }
