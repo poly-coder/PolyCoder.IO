@@ -21,7 +21,7 @@ let ``DataSets.Binary.writeSeqData with empty data should be symetric with readS
   use mem = new MemoryStream()
   do
     use writer = new BinaryWriter(mem, Encoding.UTF8, true)
-    Binary.Internals.writeSeqData 32u writeFloat Array.empty writer
+    Binary.Sequential.write 32u writeFloat Array.empty writer
     writer.Flush()
 
   let memLength = mem.Length
@@ -29,7 +29,7 @@ let ``DataSets.Binary.writeSeqData with empty data should be symetric with readS
 
   let actualData =
     use reader = new BinaryReader(mem)
-    Binary.Internals.readSeqDataAsArray readFloat reader
+    Binary.Sequential.readAsArray readFloat reader
 
   test <@ actualData = [||] @>
   test <@ memLength = 2L @>
@@ -45,7 +45,7 @@ let ``DataSets.Binary.writeSeqData with single window should be symetric with re
   use mem = new MemoryStream()
   do
     use writer = new BinaryWriter(mem, Encoding.UTF8, true)
-    Binary.Internals.writeSeqData 32u writeFloat originalData writer
+    Binary.Sequential.write 32u writeFloat originalData writer
     writer.Flush()
 
   let memLength = mem.Length
@@ -53,7 +53,7 @@ let ``DataSets.Binary.writeSeqData with single window should be symetric with re
 
   let actualData =
     use reader = new BinaryReader(mem)
-    Binary.Internals.readSeqDataAsArray readFloat reader
+    Binary.Sequential.readAsArray readFloat reader
 
   test <@ actualData = originalData @>
   test <@ memLength = 163L @>
@@ -69,7 +69,7 @@ let ``DataSets.Binary.writeSeqData with many windows should be symetric with rea
   use mem = new MemoryStream()
   do
     use writer = new BinaryWriter(mem, Encoding.UTF8, true)
-    Binary.Internals.writeSeqData 32u writeFloat originalData writer
+    Binary.Sequential.write 32u writeFloat originalData writer
     writer.Flush()
 
   let memLength = mem.Length
@@ -77,7 +77,7 @@ let ``DataSets.Binary.writeSeqData with many windows should be symetric with rea
 
   let actualData =
     use reader = new BinaryReader(mem)
-    Binary.Internals.readSeqDataAsArray readFloat reader
+    Binary.Sequential.readAsArray readFloat reader
 
   test <@ actualData = originalData @>
   test <@ memLength = 966L @>
@@ -85,13 +85,13 @@ let ``DataSets.Binary.writeSeqData with many windows should be symetric with rea
 
 
 [<Test>]
-let ``DataSets.Binary.writeSeqPositiveDiffUInt64Data with empty data should be symetric with readSeqPositiveDiffUInt64DataAsArray`` () =
+let ``DataSets.Binary.writePositiveDifferencesUInt64 with empty data should be symetric with readPositiveDifferencesUInt64AsArray`` () =
   let originalData: uint64[] = [||]
 
   use mem = new MemoryStream()
   do
     use writer = new BinaryWriter(mem, Encoding.UTF8, true)
-    Binary.Internals.writeSeqPositiveDiffUInt64Data 8ul originalData writer
+    Binary.Sequential.writePositiveDifferencesUInt64 8ul originalData writer
     writer.Flush()
 
   let memLength = mem.Length
@@ -99,19 +99,19 @@ let ``DataSets.Binary.writeSeqPositiveDiffUInt64Data with empty data should be s
 
   let actualData =
     use reader = new BinaryReader(mem)
-    Binary.Internals.readSeqPositiveDiffUInt64DataAsArray reader
+    Binary.Sequential.readPositiveDifferencesUInt64AsArray reader
 
   test <@ actualData = originalData @>
   test <@ memLength = 2L @>
 
 [<Test>]
-let ``DataSets.Binary.writeSeqPositiveDiffUInt64Data with single window of small diff data should be symetric with readSeqPositiveDiffUInt64DataAsArray`` () =
+let ``DataSets.Binary.writePositiveDifferencesUInt64 with single window of small diff data should be symetric with readPositiveDifferencesUInt64AsArray`` () =
   let originalData = [|0UL;1UL;2UL;3UL;5UL;8UL|]
 
   use mem = new MemoryStream()
   do
     use writer = new BinaryWriter(mem, Encoding.UTF8, true)
-    Binary.Internals.writeSeqPositiveDiffUInt64Data 8ul originalData writer
+    Binary.Sequential.writePositiveDifferencesUInt64 8ul originalData writer
     writer.Flush()
   
   let memLength = mem.Length
@@ -119,19 +119,19 @@ let ``DataSets.Binary.writeSeqPositiveDiffUInt64Data with single window of small
 
   let actualData =
     use reader = new BinaryReader(mem)
-    Binary.Internals.readSeqPositiveDiffUInt64DataAsArray reader
+    Binary.Sequential.readPositiveDifferencesUInt64AsArray reader
 
   test <@ actualData = originalData @>
   test <@ memLength = 17L @>
 
 [<Test>]
-let ``DataSets.Binary.writeSeqPositiveDiffUInt64Data with single window of small diff data and new large diff data should be symetric with readSeqPositiveDiffUInt64DataAsArray`` () =
+let ``DataSets.Binary.writePositiveDifferencesUInt64 with single window of small diff data and new large diff data should be symetric with readPositiveDifferencesUInt64AsArray`` () =
   let originalData = [|0UL;1UL;2UL;610UL|]
 
   use mem = new MemoryStream()
   do
     use writer = new BinaryWriter(mem, Encoding.UTF8, true)
-    Binary.Internals.writeSeqPositiveDiffUInt64Data 8ul originalData writer
+    Binary.Sequential.writePositiveDifferencesUInt64 8ul originalData writer
     writer.Flush()
   
   let memLength = mem.Length
@@ -139,19 +139,19 @@ let ``DataSets.Binary.writeSeqPositiveDiffUInt64Data with single window of small
 
   let actualData =
     use reader = new BinaryReader(mem)
-    Binary.Internals.readSeqPositiveDiffUInt64DataAsArray reader
+    Binary.Sequential.readPositiveDifferencesUInt64AsArray reader
 
   test <@ actualData = originalData @>
   test <@ memLength = 18L @>
 
 [<Test>]
-let ``DataSets.Binary.writeSeqPositiveDiffUInt64Data with many windows of small diff data should be symetric with readSeqPositiveDiffUInt64DataAsArray`` () =
+let ``DataSets.Binary.writePositiveDifferencesUInt64 with many windows of small diff data should be symetric with readPositiveDifferencesUInt64AsArray`` () =
   let originalData = [| for i = 1UL to 20UL do i |]
 
   use mem = new MemoryStream()
   do
     use writer = new BinaryWriter(mem, Encoding.UTF8, true)
-    Binary.Internals.writeSeqPositiveDiffUInt64Data 8ul originalData writer
+    Binary.Sequential.writePositiveDifferencesUInt64 8ul originalData writer
     writer.Flush()
   
   let memLength = mem.Length
@@ -159,13 +159,13 @@ let ``DataSets.Binary.writeSeqPositiveDiffUInt64Data with many windows of small 
 
   let actualData =
     use reader = new BinaryReader(mem)
-    Binary.Internals.readSeqPositiveDiffUInt64DataAsArray reader
+    Binary.Sequential.readPositiveDifferencesUInt64AsArray reader
 
   test <@ actualData = originalData @>
   test <@ memLength = 49L @>
 
 [<Test>]
-let ``DataSets.Binary.writeSeqPositiveDiffUInt64Data with many windows of small diff data and then large diff data should be symetric with readSeqPositiveDiffUInt64DataAsArray`` () =
+let ``DataSets.Binary.writePositiveDifferencesUInt64 with many windows of small diff data and then large diff data should be symetric with readPositiveDifferencesUInt64AsArray`` () =
   let originalData = [|
     for i = 1UL to 20UL do i
     for i = 1UL to 20UL do i * 256UL
@@ -174,7 +174,7 @@ let ``DataSets.Binary.writeSeqPositiveDiffUInt64Data with many windows of small 
   use mem = new MemoryStream()
   do
     use writer = new BinaryWriter(mem, Encoding.UTF8, true)
-    Binary.Internals.writeSeqPositiveDiffUInt64Data 8ul originalData writer
+    Binary.Sequential.writePositiveDifferencesUInt64 8ul originalData writer
     writer.Flush()
   
   let memLength = mem.Length
@@ -182,13 +182,13 @@ let ``DataSets.Binary.writeSeqPositiveDiffUInt64Data with many windows of small 
 
   let actualData =
     use reader = new BinaryReader(mem)
-    Binary.Internals.readSeqPositiveDiffUInt64DataAsArray reader
+    Binary.Sequential.readPositiveDifferencesUInt64AsArray reader
 
   test <@ actualData = originalData @>
   test <@ memLength = 108L @>
 
 [<Test>]
-let ``DataSets.Binary.writeSeqPositiveDiffUInt64Data with many windows and diff steps should be symetric with readSeqPositiveDiffUInt64DataAsArray`` () =
+let ``DataSets.Binary.writePositiveDifferencesUInt64 with many windows and diff steps should be symetric with readPositiveDifferencesUInt64AsArray`` () =
   let originalData = [|
     for i = 1UL to 20UL do i
     for i = 1UL to 20UL do i * 0x100UL
@@ -202,7 +202,7 @@ let ``DataSets.Binary.writeSeqPositiveDiffUInt64Data with many windows and diff 
   use mem = new MemoryStream()
   do
     use writer = new BinaryWriter(mem, Encoding.UTF8, true)
-    Binary.Internals.writeSeqPositiveDiffUInt64Data 8ul originalData writer
+    Binary.Sequential.writePositiveDifferencesUInt64 8ul originalData writer
     writer.Flush()
   
   let memLength = mem.Length
@@ -210,13 +210,13 @@ let ``DataSets.Binary.writeSeqPositiveDiffUInt64Data with many windows and diff 
 
   let actualData =
     use reader = new BinaryReader(mem)
-    Binary.Internals.readSeqPositiveDiffUInt64DataAsArray reader
+    Binary.Sequential.readPositiveDifferencesUInt64AsArray reader
 
   test <@ actualData = originalData @>
   test <@ memLength = 507L @>
 
 [<Test>]
-let ``DataSets.Binary.writeSeqPositiveDiffUInt64Data with many larger windows and diff steps should be symetric with readSeqPositiveDiffUInt64DataAsArray`` () =
+let ``DataSets.Binary.writePositiveDifferencesUInt64 with many larger windows and diff steps should be symetric with readPositiveDifferencesUInt64AsArray`` () =
   let originalData = [|
     for i = 1UL to 20UL do i
     for i = 1UL to 20UL do i * 0x100UL
@@ -230,7 +230,7 @@ let ``DataSets.Binary.writeSeqPositiveDiffUInt64Data with many larger windows an
   use mem = new MemoryStream()
   do
     use writer = new BinaryWriter(mem, Encoding.UTF8, true)
-    Binary.Internals.writeSeqPositiveDiffUInt64Data 64ul originalData writer
+    Binary.Sequential.writePositiveDifferencesUInt64 64ul originalData writer
     writer.Flush()
   
   let memLength = mem.Length
@@ -238,13 +238,13 @@ let ``DataSets.Binary.writeSeqPositiveDiffUInt64Data with many larger windows an
 
   let actualData =
     use reader = new BinaryReader(mem)
-    Binary.Internals.readSeqPositiveDiffUInt64DataAsArray reader
+    Binary.Sequential.readPositiveDifferencesUInt64AsArray reader
 
   test <@ actualData = originalData @>
   test <@ memLength = 409L @>
 
 [<Test>]
-let ``DataSets.Binary.writeSeqPositiveDiffUInt64Data with many larger windows and short diff steps should be symetric with readSeqPositiveDiffUInt64DataAsArray`` () =
+let ``DataSets.Binary.writePositiveDifferencesUInt64 with many larger windows and short diff steps should be symetric with readPositiveDifferencesUInt64AsArray`` () =
   let originalData = [|
     for i = 1UL to 10UL do i
     for i = 1UL to 10UL do i * 0x100UL
@@ -258,7 +258,7 @@ let ``DataSets.Binary.writeSeqPositiveDiffUInt64Data with many larger windows an
   use mem = new MemoryStream()
   do
     use writer = new BinaryWriter(mem, Encoding.UTF8, true)
-    Binary.Internals.writeSeqPositiveDiffUInt64Data 64ul originalData writer
+    Binary.Sequential.writePositiveDifferencesUInt64 64ul originalData writer
     writer.Flush()
   
   let memLength = mem.Length
@@ -266,7 +266,7 @@ let ``DataSets.Binary.writeSeqPositiveDiffUInt64Data with many larger windows an
 
   let actualData =
     use reader = new BinaryReader(mem)
-    Binary.Internals.readSeqPositiveDiffUInt64DataAsArray reader
+    Binary.Sequential.readPositiveDifferencesUInt64AsArray reader
 
   test <@ actualData = originalData @>
   test <@ memLength = 254L @>
@@ -274,13 +274,13 @@ let ``DataSets.Binary.writeSeqPositiveDiffUInt64Data with many larger windows an
 
 
 [<Test>]
-let ``DataSets.Binary.writeSeqDiffInt64Data with empty data should be symetric with readSeqDiffInt64DataAsArray`` () =
+let ``DataSets.Binary.writeSignedDifferencesInt64 with empty data should be symetric with readSignedDifferencesInt64AsArray`` () =
   let originalData: int64[] = [||]
 
   use mem = new MemoryStream()
   do
     use writer = new BinaryWriter(mem, Encoding.UTF8, true)
-    Binary.Internals.writeSeqDiffInt64Data 8ul originalData writer
+    Binary.Sequential.writeSignedDifferencesInt64 8ul originalData writer
     writer.Flush()
 
   let memLength = mem.Length
@@ -288,19 +288,19 @@ let ``DataSets.Binary.writeSeqDiffInt64Data with empty data should be symetric w
 
   let actualData =
     use reader = new BinaryReader(mem)
-    Binary.Internals.readSeqDiffInt64DataAsArray reader
+    Binary.Sequential.readSignedDifferencesInt64AsArray reader
 
   test <@ actualData = originalData @>
   test <@ memLength = 2L @>
 
 [<Test>]
-let ``DataSets.Binary.writeSeqDiffInt64Data with single window of small diff data should be symetric with readSeqDiffInt64DataAsArray`` () =
+let ``DataSets.Binary.writeSignedDifferencesInt64 with single window of small diff data should be symetric with readSignedDifferencesInt64AsArray`` () =
   let originalData = [|0L;1L;2L;3L;5L;8L|]
 
   use mem = new MemoryStream()
   do
     use writer = new BinaryWriter(mem, Encoding.UTF8, true)
-    Binary.Internals.writeSeqDiffInt64Data 8ul originalData writer
+    Binary.Sequential.writeSignedDifferencesInt64 8ul originalData writer
     writer.Flush()
   
   let memLength = mem.Length
@@ -308,19 +308,19 @@ let ``DataSets.Binary.writeSeqDiffInt64Data with single window of small diff dat
 
   let actualData =
     use reader = new BinaryReader(mem)
-    Binary.Internals.readSeqDiffInt64DataAsArray reader
+    Binary.Sequential.readSignedDifferencesInt64AsArray reader
 
   test <@ actualData = originalData @>
   test <@ memLength = 17L @>
 
 [<Test>]
-let ``DataSets.Binary.writeSeqDiffInt64Data with single window of small diff data and new large diff data should be symetric with readSeqDiffInt64DataAsArray`` () =
+let ``DataSets.Binary.writeSignedDifferencesInt64 with single window of small diff data and new large diff data should be symetric with readSignedDifferencesInt64AsArray`` () =
   let originalData = [|0L;1L;2L;610L|]
 
   use mem = new MemoryStream()
   do
     use writer = new BinaryWriter(mem, Encoding.UTF8, true)
-    Binary.Internals.writeSeqDiffInt64Data 8ul originalData writer
+    Binary.Sequential.writeSignedDifferencesInt64 8ul originalData writer
     writer.Flush()
   
   let memLength = mem.Length
@@ -328,19 +328,19 @@ let ``DataSets.Binary.writeSeqDiffInt64Data with single window of small diff dat
 
   let actualData =
     use reader = new BinaryReader(mem)
-    Binary.Internals.readSeqDiffInt64DataAsArray reader
+    Binary.Sequential.readSignedDifferencesInt64AsArray reader
 
   test <@ actualData = originalData @>
   test <@ memLength = 18L @>
 
 [<Test>]
-let ``DataSets.Binary.writeSeqDiffInt64Data with many windows of small diff data should be symetric with readSeqDiffInt64DataAsArray`` () =
+let ``DataSets.Binary.writeSignedDifferencesInt64 with many windows of small diff data should be symetric with readSignedDifferencesInt64AsArray`` () =
   let originalData = [| for i = 1L to 20L do i |]
 
   use mem = new MemoryStream()
   do
     use writer = new BinaryWriter(mem, Encoding.UTF8, true)
-    Binary.Internals.writeSeqDiffInt64Data 8ul originalData writer
+    Binary.Sequential.writeSignedDifferencesInt64 8ul originalData writer
     writer.Flush()
   
   let memLength = mem.Length
@@ -348,13 +348,13 @@ let ``DataSets.Binary.writeSeqDiffInt64Data with many windows of small diff data
 
   let actualData =
     use reader = new BinaryReader(mem)
-    Binary.Internals.readSeqDiffInt64DataAsArray reader
+    Binary.Sequential.readSignedDifferencesInt64AsArray reader
 
   test <@ actualData = originalData @>
   test <@ memLength = 49L @>
 
 [<Test>]
-let ``DataSets.Binary.writeSeqDiffInt64Data with many windows of small diff data and then large diff data should be symetric with readSeqDiffInt64DataAsArray`` () =
+let ``DataSets.Binary.writeSignedDifferencesInt64 with many windows of small diff data and then large diff data should be symetric with readSignedDifferencesInt64AsArray`` () =
   let originalData = [|
     for i = 1L to 20L do i
     for i = 1L to 20L do i * 256L
@@ -363,7 +363,7 @@ let ``DataSets.Binary.writeSeqDiffInt64Data with many windows of small diff data
   use mem = new MemoryStream()
   do
     use writer = new BinaryWriter(mem, Encoding.UTF8, true)
-    Binary.Internals.writeSeqDiffInt64Data 8ul originalData writer
+    Binary.Sequential.writeSignedDifferencesInt64 8ul originalData writer
     writer.Flush()
   
   let memLength = mem.Length
@@ -371,13 +371,13 @@ let ``DataSets.Binary.writeSeqDiffInt64Data with many windows of small diff data
 
   let actualData =
     use reader = new BinaryReader(mem)
-    Binary.Internals.readSeqDiffInt64DataAsArray reader
+    Binary.Sequential.readSignedDifferencesInt64AsArray reader
 
   test <@ actualData = originalData @>
   test <@ memLength = 108L @>
 
 [<Test>]
-let ``DataSets.Binary.writeSeqDiffInt64Data with many windows and diff steps should be symetric with readSeqDiffInt64DataAsArray`` () =
+let ``DataSets.Binary.writeSignedDifferencesInt64 with many windows and diff steps should be symetric with readSignedDifferencesInt64AsArray`` () =
   let originalData = [|
     for i = 1L to 20L do i
     for i = 1L to 20L do i * 0x100L
@@ -391,7 +391,7 @@ let ``DataSets.Binary.writeSeqDiffInt64Data with many windows and diff steps sho
   use mem = new MemoryStream()
   do
     use writer = new BinaryWriter(mem, Encoding.UTF8, true)
-    Binary.Internals.writeSeqDiffInt64Data 8ul originalData writer
+    Binary.Sequential.writeSignedDifferencesInt64 8ul originalData writer
     writer.Flush()
   
   let memLength = mem.Length
@@ -399,13 +399,13 @@ let ``DataSets.Binary.writeSeqDiffInt64Data with many windows and diff steps sho
 
   let actualData =
     use reader = new BinaryReader(mem)
-    Binary.Internals.readSeqDiffInt64DataAsArray reader
+    Binary.Sequential.readSignedDifferencesInt64AsArray reader
 
   test <@ actualData = originalData @>
   test <@ memLength = 507L @>
 
 [<Test>]
-let ``DataSets.Binary.writeSeqDiffInt64Data with many larger windows and diff steps should be symetric with readSeqDiffInt64DataAsArray`` () =
+let ``DataSets.Binary.writeSignedDifferencesInt64 with many larger windows and diff steps should be symetric with readSignedDifferencesInt64AsArray`` () =
   let originalData = [|
     for i = 1L to 20L do i
     for i = 1L to 20L do i * 0x100L
@@ -419,7 +419,7 @@ let ``DataSets.Binary.writeSeqDiffInt64Data with many larger windows and diff st
   use mem = new MemoryStream()
   do
     use writer = new BinaryWriter(mem, Encoding.UTF8, true)
-    Binary.Internals.writeSeqDiffInt64Data 64ul originalData writer
+    Binary.Sequential.writeSignedDifferencesInt64 64ul originalData writer
     writer.Flush()
   
   let memLength = mem.Length
@@ -427,13 +427,13 @@ let ``DataSets.Binary.writeSeqDiffInt64Data with many larger windows and diff st
 
   let actualData =
     use reader = new BinaryReader(mem)
-    Binary.Internals.readSeqDiffInt64DataAsArray reader
+    Binary.Sequential.readSignedDifferencesInt64AsArray reader
 
   test <@ actualData = originalData @>
   test <@ memLength = 410L @>
 
 [<Test>]
-let ``DataSets.Binary.writeSeqDiffInt64Data with many larger windows and short diff steps should be symetric with readSeqDiffInt64DataAsArray`` () =
+let ``DataSets.Binary.writeSignedDifferencesInt64 with many larger windows and short diff steps should be symetric with readSignedDifferencesInt64AsArray`` () =
   let originalData = [|
     for i = 1L to 10L do i
     for i = 1L to 10L do i * 0x100L
@@ -447,7 +447,7 @@ let ``DataSets.Binary.writeSeqDiffInt64Data with many larger windows and short d
   use mem = new MemoryStream()
   do
     use writer = new BinaryWriter(mem, Encoding.UTF8, true)
-    Binary.Internals.writeSeqDiffInt64Data 64ul originalData writer
+    Binary.Sequential.writeSignedDifferencesInt64 64ul originalData writer
     writer.Flush()
   
   let memLength = mem.Length
@@ -455,7 +455,7 @@ let ``DataSets.Binary.writeSeqDiffInt64Data with many larger windows and short d
 
   let actualData =
     use reader = new BinaryReader(mem)
-    Binary.Internals.readSeqDiffInt64DataAsArray reader
+    Binary.Sequential.readSignedDifferencesInt64AsArray reader
 
   test <@ actualData = originalData @>
   test <@ memLength = 256L @>

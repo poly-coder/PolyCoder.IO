@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Historical.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\PolyCoder.IO\PolyCoder.IO.fsproj" />
+  </ItemGroup>
+
+</Project>

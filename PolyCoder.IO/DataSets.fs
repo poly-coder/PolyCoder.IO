@@ -1,108 +1,101 @@
 ﻿module PolyCoder.IO.DataSets
 
-open System
-open System.Collections.Generic
 open PolyCoder
+open System
+open System.IO
+open System.Collections.Generic
 
-// TODO: Move to Preamble
-module Seq =
-  let windowedAll windowSize (source: _ seq) =
-    let e = source.GetEnumerator()
-    let array = ResizeArray(windowSize: int)
-    let rec loop() = seq {
-      if e.MoveNext() then
-        array.Add(e.Current)
-        if array.Count >= windowSize then
-          yield array.ToArray()
-          array.Clear()
-        yield! loop()
-      else
-        if array.Count > 0 then yield array.ToArray()
-        e.Dispose()
-    }
-    loop()
+let inline fraction value = value - floor value
 
-  let dfsKeyedWith (comparer: IEqualityComparer<'key>) getKey getChildren (source: seq<'item>) =
-    let foundSet = HashSet<_>(comparer)
-    let rec loop item = seq {
-      let key = getKey item
-      if foundSet.Add key then
-        yield item
-        yield! getChildren item |> Seq.collect loop
-    }
-    source |> Seq.collect loop
+let maximumCommonDenominatorInt64 a b =
+  let mutable x = abs (max a b)
+  let mutable y = abs (min a b)
+  while y <> 0L do
+    let rem = x % y
+    x <- y
+    y <- rem
+  if x <> 0L then x
+  else invalidOp "Cannot find MCD out of zero"
 
-  let dfsKeyed getKey = dfsKeyedWith EqualityComparer<_>.Default getKey
-  let dfsWith comparer getChildren = dfsKeyedWith comparer id getChildren
-  let dfs getChildren = dfsWith EqualityComparer<_>.Default getChildren
+let maximunCommonDenominatorInt64All (source: IList<int64>) =
+  let lastIndex = source.Count - 1
+  let mutable mcd = 0L
+  for i = 0 to lastIndex do
+    let item = source.[i]
+    mcd <-
+      if item = 0L then mcd
+      elif mcd = 0L then item
+      else maximumCommonDenominatorInt64 item mcd
+  if mcd <> 0L then mcd
+  else invalidOp "Cannot find MCD out of zero"
 
-  let dlsKeyedWith (comparer: IEqualityComparer<'key>) getKey getChildren (source: seq<'item>) =
-    let foundSet = HashSet<_>(comparer)
-    let rec loop item = seq {
-      let key = getKey item
-      if foundSet.Add key then
-        yield! getChildren item |> Seq.collect loop
-        yield item
-    }
-    source |> Seq.collect loop
+let maximunCommonDenominatorInt64Seq (source: seq<int64>) =
+  let mutable mcd = 0L
 
-  let dlsKeyed getKey = dlsKeyedWith EqualityComparer<_>.Default getKey
-  let dlsWith comparer getChildren = dlsKeyedWith comparer id getChildren
-  let dls getChildren = dlsWith EqualityComparer<_>.Default getChildren
+  source |> Seq.iter (fun item ->
+    mcd <-
+      if item = 0L then mcd
+      elif mcd = 0L then item
+      else maximumCommonDenominatorInt64 item mcd)
 
-let mcdWith isUnit remainder a b =
-  let rec loop a b =
-    if a < b then loop b a
-    elif isUnit b then a
-    else loop b (remainder a b)
-  loop a b
+  if mcd <> 0L then mcd
+  else invalidOp "Cannot find MCD out of zero"
 
-let mcd = mcdWith ((=) 1) (%)
-let mcdInt64 = mcdWith ((=) 1L) (%)
-let mcdInt32 = mcdWith ((=) 1) (%)
-let mcdInt16 = mcdWith ((=) 1s) (%)
-let mcdInt8 = mcdWith ((=) 1y) (%)
-let mcdUInt64 = mcdWith ((=) 1UL) (%)
-let mcdUInt32 = mcdWith ((=) 1u) (%)
-let mcdUInt16 = mcdWith ((=) 1us) (%)
-let mcdUInt8 = mcdWith ((=) 1uy) (%)
+let maximumCommonDenominatorUInt64 a b =
+  let mutable x = max a b
+  let mutable y = a + b - x
+  while y <> 0UL do
+    let rem = x % y
+    x <- y
+    y <- rem
+  if x <> 0UL then x
+  else invalidOp "Cannot find MCD out of zero"
 
-let mcdSeqWith isUnit remainder source =
-  let mcdLocal = mcdWith isUnit remainder
-  source
-    |> Seq.foldWhile
-        (fun acc item ->
-          match acc with
-          | Some acc ->
-            let next = mcdLocal acc item
-            if isUnit next
-            then BreakWith (Some next)
-            else ContinueWith (Some next)
-          | None ->
-            if isUnit item
-            then BreakWith (Some item)
-            else ContinueWith (Some item)
-        )
-        None
-    |> Option.get
+let maximunCommonDenominatorUInt64All (source: IList<uint64>) =
+  let lastIndex = source.Count - 1
+  let mutable mcd = 0UL
+  for i = 0 to lastIndex do
+    let item = source.[i]
+    mcd <-
+      if item = 0UL then mcd
+      elif mcd = 0UL then item
+      else maximumCommonDenominatorUInt64 item mcd
+  if mcd <> 0UL then mcd
+  else invalidOp "Cannot find MCD out of zero"
 
-let mcdSeq source = source |> mcdSeqWith ((=) 1) (%)
-let mcdInt64Seq source = source |> mcdSeqWith ((=) 1L) (%)
-let mcdInt32Seq source = source |> mcdSeqWith ((=) 1) (%)
-let mcdInt16Seq source = source |> mcdSeqWith ((=) 1s) (%)
-let mcdInt8Seq source = source |> mcdSeqWith ((=) 1y) (%)
-let mcdUInt64Seq source = source |> mcdSeqWith ((=) 1UL) (%)
-let mcdUInt32Seq source = source |> mcdSeqWith ((=) 1u) (%)
-let mcdUInt16Seq source = source |> mcdSeqWith ((=) 1us) (%)
-let mcdUInt8Seq source = source |> mcdSeqWith ((=) 1uy) (%)
+let maximunCommonDenominatorUInt64Seq (source: seq<uint64>) =
+  let mutable mcd = 0UL
 
+  source |> Seq.iter (fun item ->
+    mcd <-
+      if item = 0UL then mcd
+      elif mcd = 0UL then item
+      else maximumCommonDenominatorUInt64 item mcd)
+
+  if mcd <> 0UL then mcd
+  else invalidOp "Cannot find MCD out of zero"
+  
+let mapAsArray fn (data: IList<'a>) =
+  let values = Array.zeroCreate data.Count
+  for i = 0 to data.Count - 1 do values.[i] <- fn data.[i]
+  values
+
+let findExponentMultiplierFloat32 (b: float32) (maxExponent: int) (data: IList<float32>) =
+  let mutable exponent = 0
+  let mutable multiplier = 1.0f
+  let mutable index = 0
+  while index < data.Count && exponent <= maxExponent do
+    let itemAbs = abs(data.[index])
+    while exponent <= maxExponent && fraction(itemAbs * multiplier) <> 0.0f do
+      exponent <- exponent + 1
+      multiplier <- pown b exponent
+    index <- index + 1
+  if exponent <= maxExponent then Some multiplier else None
 
 module Binary =
-  open System.IO
-
-  module Internals =
+  module Sequential =
     // TODO: Optimize to reduce allocations
-    let writeSeqData (windowSize: uint32) writeItem data (writer: BinaryWriter) =
+    let write (windowSize: uint32) writeItem data (writer: BinaryWriter) =
       let windowSizeSize = Binary.unsignedSize (uint64 windowSize)
       // 1 - WRITE Number of bytes needed for windows sizes
       writer.Write windowSizeSize
@@ -120,7 +113,7 @@ module Binary =
       windowSizeWriter 0UL writer
 
     // TODO: Optimize to reduce allocations
-    let readSeqData readItem (reader: BinaryReader) =
+    let read readItem (reader: BinaryReader) =
       // 1 - READ Number of bytes needed for windows sizes
       let windowSizeSize = reader.ReadByte()
       let windowSizeReader = BinaryReader.readUnsigned windowSizeSize
@@ -136,11 +129,11 @@ module Binary =
       }
       windowLoop()
 
-    let readSeqDataAsArray readItem = readSeqData readItem >> Seq.toArray
+    let readAsArray readItem = read readItem >> Seq.toArray
 
 
     // TODO: Optimize to reduce allocations
-    let writeSeqAnyDiffData
+    let writeDifferences
         (getDiffSize: 'diff -> byte)
         (createDiffWriter: byte -> 'diff -> BinaryWriter -> unit)
         (maxWindowSize: uint32)
@@ -254,7 +247,7 @@ module Binary =
       writer |> windowSizeWriter 0UL
 
     // TODO: Optimize to reduce allocations
-    let readSeqAnyDiffData
+    let readDifferences
         (createDiffReader: byte -> BinaryReader -> 'diff)
         (add: 'item -> 'diff -> 'item)
         (readItem: BinaryReader -> 'item)
@@ -287,109 +280,352 @@ module Binary =
         
       loop()
 
-    let readSeqAnyDiffDataAsArray createDiffReader add readItem =
-      readSeqAnyDiffData createDiffReader add readItem >> Seq.toArray
+    let readDifferencesAsArray createDiffReader add readItem =
+      readDifferences createDiffReader add readItem >> Seq.toArray
 
     
-    let writeSeqPositiveDiffData maxWindowSize substract writeItem data =
-      writeSeqAnyDiffData Binary.unsignedSize BinaryWriter.writeUnsigned maxWindowSize substract writeItem data
+    let writePositiveDifferences maxWindowSize substract writeItem data =
+      writeDifferences Binary.unsignedSize BinaryWriter.writeUnsigned maxWindowSize substract writeItem data
 
-    let readSeqPositiveDiffData add readItem =
-      readSeqAnyDiffData BinaryReader.readUnsigned add readItem
+    let readPositiveDifferences add readItem =
+      readDifferences BinaryReader.readUnsigned add readItem
 
-    let readSeqPositiveDiffDataAsArray add readItem =
-      readSeqPositiveDiffData add readItem >> Seq.toArray
+    let readPositiveDifferencesAsArray add readItem =
+      readPositiveDifferences add readItem >> Seq.toArray
 
 
-    let writeSeqPositiveDiffUInt64Data (maxWindowSize: uint32) =
+    let writePositiveDifferencesUInt64 (maxWindowSize: uint32) =
       let substract (a: uint64) (b: uint64) =
         assert (a >= b)
         a - b
-      writeSeqPositiveDiffData maxWindowSize substract (fun item writer -> writer.Write(item))
+      writePositiveDifferences maxWindowSize substract (fun item writer -> writer.Write(item))
 
-    let readSeqPositiveDiffUInt64Data reader =
+    let readPositiveDifferencesUInt64 reader =
       let add a b = a + b
-      readSeqPositiveDiffData add (fun reader -> reader.ReadUInt64()) reader
+      readPositiveDifferences add (fun reader -> reader.ReadUInt64()) reader
     
-    let readSeqPositiveDiffUInt64DataAsArray reader =
-      readSeqPositiveDiffUInt64Data reader |> Seq.toArray
-
-
-    let writeSeqPositiveDiffUInt32Data (maxWindowSize: uint32) =
-      let substract (a: uint32) (b: uint32) =
-        assert (a >= b)
-        a - b |> uint64
-      writeSeqPositiveDiffData maxWindowSize substract (fun item writer -> writer.Write(item))
-
-    let readSeqPositiveDiffUInt32Data reader =
-      let add (a: uint32) (b: uint64) = a + uint32 b
-      readSeqPositiveDiffData add (fun reader -> reader.ReadUInt32()) reader
-    
-    let readSeqPositiveDiffUInt32DataAsArray reader =
-      readSeqPositiveDiffUInt32Data reader |> Seq.toArray
-
-
-    let writeSeqPositiveDiffUInt16Data (maxWindowSize: uint32) =
-      let substract (a: uint16) (b: uint16) =
-        assert (a >= b)
-        a - b |> uint64
-      writeSeqPositiveDiffData maxWindowSize substract (fun item writer -> writer.Write(item))
-
-    let readSeqPositiveDiffUInt16Data reader =
-      let add (a: uint16) (b: uint64) = a + uint16 b
-      readSeqPositiveDiffData add (fun reader -> reader.ReadUInt16()) reader
-    
-    let readSeqPositiveDiffUInt16DataAsArray reader =
-      readSeqPositiveDiffUInt16Data reader |> Seq.toArray
+    let readPositiveDifferencesUInt64AsArray reader =
+      readPositiveDifferencesUInt64 reader |> Seq.toArray
 
     
-    let writeSeqDiffData maxWindowSize substract writeItem data =
-      writeSeqAnyDiffData Binary.signedSize BinaryWriter.writeSigned maxWindowSize substract writeItem data
+    let writeSignedDifferences maxWindowSize substract writeItem data =
+      writeDifferences Binary.signedSize BinaryWriter.writeSigned maxWindowSize substract writeItem data
 
-    let readSeqDiffData add readItem =
-      readSeqAnyDiffData BinaryReader.readSigned add readItem
+    let readSignedDifferences add readItem =
+      readDifferences BinaryReader.readSigned add readItem
 
-    let readSeqDiffDataAsArray add readItem =
-      readSeqDiffData add readItem >> Seq.toArray
+    let readSignedDifferencesAsArray add readItem =
+      readSignedDifferences add readItem >> Seq.toArray
 
 
-    let writeSeqDiffInt64Data (maxWindowSize: uint32) =
+    let writeSignedDifferencesInt64 (maxWindowSize: uint32) =
       let substract (a: int64) (b: int64) =
         assert (a >= b)
         a - b
-      writeSeqDiffData maxWindowSize substract (fun item writer -> writer.Write(item))
+      writeSignedDifferences maxWindowSize substract (fun item writer -> writer.Write(item))
 
-    let readSeqDiffInt64Data reader =
+    let readSignedDifferencesInt64 reader =
       let add a b = a + b
-      readSeqDiffData add (fun reader -> reader.ReadInt64()) reader
+      readSignedDifferences add (fun reader -> reader.ReadInt64()) reader
     
-    let readSeqDiffInt64DataAsArray reader =
-      readSeqDiffInt64Data reader |> Seq.toArray
+    let readSignedDifferencesInt64AsArray reader =
+      readSignedDifferencesInt64 reader |> Seq.toArray
+
+  module Arrays =
+    let write
+        (writeItem: 'item -> BinaryWriter -> unit)
+        (data: IList<'item>)
+        (writer: BinaryWriter) =
+      let dataCount = data.Count
+      writer.Write(dataCount)
+      for i = 0 to dataCount - 1 do
+        writer |> writeItem data.[i]
+
+    let read
+        (readItem: BinaryReader -> 'item)
+        (reader: BinaryReader)=
+      let dataCount = reader.ReadInt32()
+      let data = Array.zeroCreate dataCount
+      for i = 0 to dataCount - 1 do
+        data.[i] <- readItem reader
+      data
+
+    // TODO: Optimize to reduce allocations
+    let writeDifferences
+        (getDiffSize: 'diff -> byte)
+        (createDiffWriter: byte -> 'diff -> BinaryWriter -> unit)
+        (substract: 'item -> ' item -> 'diff)
+        (writeItem: 'item -> BinaryWriter -> unit)
+        (data: IList<'item>)
+        (writer: BinaryWriter) =
+
+      let MAX_SMALLER_ITEMS_TO_INCLUDE = 16
+      // 1 - WRITE Number of items in total
+      let dataSize = data.Count
+      writer.Write(dataSize)
+      let windowSizeWriter = uint64 dataSize |> Binary.unsignedSize |> BinaryWriter.writeUnsigned
+
+      // 2 - WRITE a segment of data
+      let writeCompressedSegment startIndex itemCount diffSize =
+        // 2.1 - WRITE segment size
+        writer |> windowSizeWriter (uint64 itemCount)
+        // 2.2 - WRITE first item in the segment
+        writer |> writeItem data.[startIndex]
+        if itemCount > 1 then
+          let diffWriter = createDiffWriter diffSize
+          // 2.3 - WRITE diffSize
+          writer.Write(diffSize)
+          // 2.4 - WRITE all differences
+          for i = 1 to itemCount - 1 do
+            let diff = substract data.[startIndex + i] data.[startIndex + i - 1]
+            writer |> diffWriter diff
+
+      let startIndex = ref 0
+      let lastCurrentDiffPos = ref -1
+      let currentDiffSize = ref 0uy
+
+      for endIndex = 0 to dataSize - 1 do
+        let item = data.[endIndex]
+        let itemCount = endIndex + 1 - !startIndex
+
+        if itemCount > 1 then
+          let diffSize = substract item data.[endIndex - 1] |> getDiffSize
+          
+          if itemCount = 2 then
+            // This is the second item in the segment, initialize values
+            currentDiffSize := diffSize
+            lastCurrentDiffPos := endIndex
+
+          else
+            if diffSize > !currentDiffSize then
+              // In this case we've found a larger diff than previously
+              if itemCount < MAX_SMALLER_ITEMS_TO_INCLUDE then
+                // If there are too few smaller items, consider them to be included in current segment, with larger differences
+                currentDiffSize := diffSize
+                lastCurrentDiffPos := endIndex
+              else
+                // Write previous segment and start the new one from endIndex on
+                writeCompressedSegment !startIndex (itemCount - 1) !currentDiffSize
+                startIndex := endIndex
+                currentDiffSize := 0uy
+
+            elif diffSize < !currentDiffSize then
+              if endIndex - !lastCurrentDiffPos > MAX_SMALLER_ITEMS_TO_INCLUDE then
+                // We have found too many smaller diff items, lets cut out looses here, 
+                // write the larger segment and start considering the smaller sizes
+                writeCompressedSegment !startIndex (!lastCurrentDiffPos - !startIndex + 1) !currentDiffSize
+                // Now recompute the new segment values
+                startIndex := !lastCurrentDiffPos + 1
+                currentDiffSize := (
+                  let mutable maxDiff = 0uy
+                  for i = !startIndex + 1 to endIndex do
+                    let diff = substract data.[i] data.[i-1] |> getDiffSize
+                    maxDiff <- max maxDiff diff
+                  maxDiff)
+                lastCurrentDiffPos := endIndex
+
+              else
+                // Some smaller diff items can be included, as long as there are not too many of them
+                ()
+
+            else
+              // The diffSize is kept so we just have to keep adding to current segment
+              lastCurrentDiffPos := endIndex
+
+      if !startIndex < dataSize then
+        writeCompressedSegment !startIndex (dataSize - !startIndex) !currentDiffSize
 
 
-    let writeSeqDiffInt32Data (maxWindowSize: uint32) =
-      let substract (a: int32) (b: int32) =
+    // TODO: Optimize to reduce allocations
+    let readDifferences
+        (createDiffReader: byte -> BinaryReader -> 'diff)
+        (add: 'item -> 'diff -> 'item)
+        (readItem: BinaryReader -> 'item)
+        (reader: BinaryReader) =
+      // 1 - READ Number of items in total
+      let dataSize = reader.ReadInt32()
+      let windowSizeReader = uint64 dataSize |> Binary.unsignedSize |> BinaryReader.readUnsigned
+
+      let data = Array.zeroCreate dataSize
+
+      let mutable accumSize = 0
+
+      while accumSize < dataSize do
+        // 2.1 - READ segment size
+        let itemCount = int (windowSizeReader reader)
+        // 2.2 - READ first item in the segment
+        let mutable item = readItem reader
+        data.[accumSize] <- item
+        
+        if itemCount > 1 then
+          // 2.3 - READ diffSize
+          let diffSize = reader.ReadByte()
+          let diffReader = createDiffReader diffSize
+          // 2.4 - READ all differences
+          for i = 1 to itemCount - 1 do
+            let diff = diffReader reader
+            item <- add item diff
+            data.[accumSize + i] <- item
+
+        accumSize <- accumSize + itemCount
+
+      data
+
+    
+    let writePositiveDifferences substract writeItem data =
+      writeDifferences Binary.unsignedSize BinaryWriter.writeUnsigned substract writeItem data
+
+    let readPositiveDifferences add readItem =
+      readDifferences BinaryReader.readUnsigned add readItem
+
+
+    let writePositiveDifferencesUInt64 data =
+      let substract (a: uint64) (b: uint64) =
         assert (a >= b)
-        a - b |> int64
-      writeSeqDiffData maxWindowSize substract (fun item writer -> writer.Write(item))
+        a - b
+      writePositiveDifferences substract (fun item writer -> writer.Write(item)) data
 
-    let readSeqDiffInt32Data reader =
-      let add (a: int32) (b: int64) = a + int32 b
-      readSeqDiffData add (fun reader -> reader.ReadInt32()) reader
+    let readPositiveDifferencesUInt64 reader =
+      let add a b = a + b
+      readPositiveDifferences add (fun reader -> reader.ReadUInt64()) reader
+
     
-    let readSeqDiffInt32DataAsArray reader =
-      readSeqDiffInt32Data reader |> Seq.toArray
+    let writeSignedDifferences substract writeItem data =
+      writeDifferences Binary.signedSize BinaryWriter.writeSigned substract writeItem data
+
+    let readSignedDifferences add readItem =
+      readDifferences BinaryReader.readSigned add readItem
 
 
-    let writeSeqDiffInt16Data (maxWindowSize: uint32) =
-      let substract (a: int16) (b: int16) =
-        assert (a >= b)
-        a - b |> int64
-      writeSeqDiffData maxWindowSize substract (fun item writer -> writer.Write(item))
+    let writeSignedDifferencesInt64 data =
+      let substract (a: int64) (b: int64) = a - b
+      writeSignedDifferences substract (fun item writer -> writer.Write(item)) data
 
-    let readSeqDiffInt16Data reader =
-      let add (a: int16) (b: int64) = a + int16 b
-      readSeqDiffData add (fun reader -> reader.ReadInt16()) reader
+    let readSignedDifferencesInt64 reader =
+      let add a b = a + b
+      readSignedDifferences add (fun reader -> reader.ReadInt64()) reader
+     
+
+module BinaryWriter =
+  let writeMonotonicUInt64 data (writer: BinaryWriter) =
+    match Option.catch maximunCommonDenominatorUInt64All data with
+    | None ->
+      // 1 - WRITE 0 to indicate that all values are 0
+      writer.Write(0uy)
+      // 2 - WRITE The total amount of zeros
+      writer.Write(data.Count)
+
+    | Some multiplier ->
+      let values =
+        if multiplier = 1UL then data
+        else data |> mapAsArray (fun v -> v / multiplier) :> IList<_>
+      // 1 - WRITE 1 to indicate that data follows
+      writer.Write(1uy)
+      // 2 - WRITE multiplier
+      writer.Write(multiplier)
+      // 3 - WRITE data using differences
+      writer |> Binary.Arrays.writePositiveDifferencesUInt64 values
+      
+  let writeMonotonicDateTimes (data: IList<DateTime>) =
+    data
+      |> mapAsArray (fun d -> uint64 d.Ticks)
+      |> writeMonotonicUInt64
+
+  let writeBrownianInt64 data (writer: BinaryWriter) =
+    match Option.catch maximunCommonDenominatorInt64All data with
+    | None ->
+      // 1 - WRITE 0 to indicate that all values are 0
+      writer.Write(0uy)
+      // 2 - WRITE The total amount of zeros
+      writer.Write(data.Count)
+
+    | Some multiplier ->
+      let values =
+        if multiplier = 1L then data
+        else data |> mapAsArray (fun v -> v / multiplier) :> IList<_>
+      // 1 - WRITE 1 to indicate that data follows
+      writer.Write(1uy)
+      // 2 - WRITE multiplier
+      writer.Write(multiplier)
+      // 3 - WRITE data using differences
+      writer |> Binary.Arrays.writeSignedDifferencesInt64 values
+
+  let writeBrownianFloat32 data (writer: BinaryWriter) =
+    match findExponentMultiplierFloat32 10.0f 10 data with
+    | None ->
+      // 1 - WRITE 0 to indicate that we could not find any multiplier to turn floats into ints
+      writer.Write(0uy)
+      // 2 - WRITE floats normally
+      Binary.Arrays.write (fun v w -> w.Write(v: float32)) data writer
+
+    | Some multiplier ->
+      // 1 - WRITE 1 to indicate that we found a multiplier to turn floats into ints
+      writer.Write(1uy)
+      // 2 - WRITE float32 multiplier
+      writer.Write(multiplier)
+      // 3 - WRITE data as brownian Int64
+      let values = data |> mapAsArray (fun v -> v * multiplier |> round |> int64)
+      writer |> writeBrownianInt64 values
+
+module BinaryReader =
+  let readMonotonicUInt64 (reader: BinaryReader) =
+    // 1 - READ mode to know how to read the next content
+    let mode = reader.ReadByte()
+    match mode with
+    | 0uy ->
+      // 2 - READ The total amount of zeros
+      let dataCount = reader.Read()
+      Array.zeroCreate dataCount
+
+    | 1uy ->
+      // 2 - READ multiplier
+      let multiplier = reader.ReadUInt64()
+      // 3 - Read data using differences
+      let data = reader |> Binary.Arrays.readPositiveDifferencesUInt64
+      if multiplier = 1UL then data
+      else data |> mapAsArray ((*) multiplier)
+
+    | _ ->
+      invalidOp (sprintf "Unknown file format")
+
+  let readMonotonicDateTimes kind reader =
+    readMonotonicUInt64 reader
+      |> mapAsArray (fun ticks -> DateTime(int64 ticks, kind))
     
-    let readSeqDiffInt16DataAsArray reader =
-      readSeqDiffInt16Data reader |> Seq.toArray
+  let readBrownianInt64 (reader: BinaryReader) =
+    // 1 - READ mode to know how to read the next content
+    let mode = reader.ReadByte()
+    match mode with
+    | 0uy ->
+      // 2 - READ The total amount of zeros
+      let dataCount = reader.Read()
+      Array.zeroCreate dataCount
+
+    | 1uy ->
+      // 2 - READ multiplier
+      let multiplier = reader.ReadInt64()
+      // 3 - Read data using differences
+      let data = reader |> Binary.Arrays.readSignedDifferencesInt64
+      if multiplier = 1L then data
+      else data |> mapAsArray ((*) multiplier)
+
+    | _ ->
+      invalidOp (sprintf "Unknown file format")
+    
+  let readBrownianFloat32 (reader: BinaryReader) =
+    // 1 - READ mode to know how to read the next content
+    let mode = reader.ReadByte()
+    match mode with
+    | 0uy ->
+      // 2 - READ floats normally
+      reader |> Binary.Arrays.read (fun r -> r.ReadSingle())
+
+    | 1uy ->
+      // 2 - READ float32 multiplier
+      let multiplier = reader.ReadSingle()
+      // 3 - READ data brownian Int64
+      let data = reader |> readBrownianInt64
+      data |> mapAsArray (fun v -> float32 v / multiplier)
+
+    | _ ->
+      invalidOp (sprintf "Unknown file format")

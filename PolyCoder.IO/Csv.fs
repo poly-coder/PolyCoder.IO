@@ -162,3 +162,57 @@ module TextReader =
 
       do! parseCsv { format = options.format; events = events } reader
     }
+
+    type ReadIndexedUniformCsvOptions<'index, 'value, 'row> = {
+      indexName: string
+      columnNames: string[]
+      parseIndex: CharSpanParser<'index>
+      parseValue: CharSpanParser<'value>
+      createRow: 'index -> 'value[] -> 'row
+      csvFormat: CsvFormat
+    }
+
+    let readIndexedUniformCsv options (reader: TextReader) = async {
+      let mutable currentIndex = Unchecked.defaultof<'index>
+      let currentValues = Array.zeroCreate<'value> options.columnNames.Length
+
+      let hasColumnName (name: string) =
+        OnValueParsed(fun span ->
+          let nameSpan = name.AsSpan()
+          if not (span.Equals(nameSpan, StringComparison.InvariantCulture)) then
+            invalidOp (sprintf "Expected column '%s' but found '%s'" name (span.ToString())))
+
+      let result = ResizeArray()
+
+      let addIndex = OnValueParsed(fun span ->
+        currentIndex <- options.parseIndex.Invoke(span))
+
+      let addValue index = OnValueParsed(fun span ->
+        currentValues.[index] <- options.parseValue.Invoke(span)
+        if index = options.columnNames.Length - 1 then
+          let row = options.createRow currentIndex currentValues
+          result.Add(row)
+      )
+
+      let columns =
+        [|
+            yield {
+              setColumnName = hasColumnName options.indexName
+              addColumnValue = addIndex
+            }
+
+            for i = 0 to options.columnNames.Length - 1 do
+              yield {
+                setColumnName = hasColumnName options.columnNames.[i]
+                addColumnValue = addValue i
+              }
+        |]
+
+      do! reader
+        |> parseCsvColumns {
+          format = options.csvFormat
+          columns = columns
+        }
+
+      return result
+    }

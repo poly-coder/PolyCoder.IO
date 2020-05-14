@@ -10,35 +10,27 @@ open System.Globalization
 open System.Text.RegularExpressions
 open System.Text
 
+type CharSpanParser<'a> = delegate of span: ReadOnlySpan<char> -> 'a
+
 module Text =
-  type CharSpanParser<'a> = delegate of span: ReadOnlySpan<char> -> 'a
 
-  let inline parseInt8 (span: ReadOnlySpan<char>) =
-    SByte.Parse(span, NumberStyles.Integer, CultureInfo.InvariantCulture)
-  let inline parseInt16 (span: ReadOnlySpan<char>) =
-    Int16.Parse(span, NumberStyles.Integer, CultureInfo.InvariantCulture)
-  let inline parseInt32 (span: ReadOnlySpan<char>) =
-    Int32.Parse(span, NumberStyles.Integer, CultureInfo.InvariantCulture)
-  let inline parseInt64 (span: ReadOnlySpan<char>) =
-    Int64.Parse(span, NumberStyles.Integer, CultureInfo.InvariantCulture)
+  let parseInt8 = CharSpanParser(fun span -> SByte.Parse(span, NumberStyles.Integer, CultureInfo.InvariantCulture))
+  let parseInt16 = CharSpanParser(fun span -> Int16.Parse(span, NumberStyles.Integer, CultureInfo.InvariantCulture))
+  let parseInt32 = CharSpanParser(fun span -> Int32.Parse(span, NumberStyles.Integer, CultureInfo.InvariantCulture))
+  let parseInt64 = CharSpanParser(fun span -> Int64.Parse(span, NumberStyles.Integer, CultureInfo.InvariantCulture))
 
-  let inline parseUInt8 (span: ReadOnlySpan<char>) =
-    Byte.Parse(span, NumberStyles.Integer, CultureInfo.InvariantCulture)
-  let inline parseUInt16 (span: ReadOnlySpan<char>) =
-    UInt16.Parse(span, NumberStyles.Integer, CultureInfo.InvariantCulture)
-  let inline parseUInt32 (span: ReadOnlySpan<char>) =
-    UInt32.Parse(span, NumberStyles.Integer, CultureInfo.InvariantCulture)
-  let inline parseUInt64 (span: ReadOnlySpan<char>) =
-    UInt64.Parse(span, NumberStyles.Integer, CultureInfo.InvariantCulture)
+  let parseUInt8 = CharSpanParser(fun span -> Byte.Parse(span, NumberStyles.Integer, CultureInfo.InvariantCulture))
+  let parseUInt16 = CharSpanParser(fun span -> UInt16.Parse(span, NumberStyles.Integer, CultureInfo.InvariantCulture))
+  let parseUInt32 = CharSpanParser(fun span -> UInt32.Parse(span, NumberStyles.Integer, CultureInfo.InvariantCulture))
+  let parseUInt64 = CharSpanParser(fun span -> UInt64.Parse(span, NumberStyles.Integer, CultureInfo.InvariantCulture))
 
-  let inline parseFloat32 (span: ReadOnlySpan<char>) =
-    Single.Parse(span, NumberStyles.Float, CultureInfo.InvariantCulture)
-  let inline parseFloat (span: ReadOnlySpan<char>) =
-    Double.Parse(span, NumberStyles.Float, CultureInfo.InvariantCulture)
-  let inline parseDecimal (span: ReadOnlySpan<char>) =
-    Decimal.Parse(span, NumberStyles.Float, CultureInfo.InvariantCulture)
+  let parseFloat32 = CharSpanParser(fun span -> Single.Parse(span, NumberStyles.Float, CultureInfo.InvariantCulture))
+  let parseFloat = CharSpanParser(fun span -> Double.Parse(span, NumberStyles.Float, CultureInfo.InvariantCulture))
+  let parseDecimal = CharSpanParser(fun span -> Decimal.Parse(span, NumberStyles.Float, CultureInfo.InvariantCulture))
 
-  let inline parseString (span: ReadOnlySpan<char>) = span.ToString()
+  let parseString = CharSpanParser(fun span -> span.ToString())
+
+  let internal parseInt (span: ReadOnlySpan<char>) = Int32.Parse(span, NumberStyles.Integer, CultureInfo.InvariantCulture)
 
   let makeFixedPositionDateParser (kind: DateTimeKind) format: CharSpanParser<DateTime> =
     let missingPattern name = invalidOp (sprintf "Missing pattern in date time format: %s" name)
@@ -68,13 +60,13 @@ module Text =
       let hourIndex, hourLength = hourPos |> parseOrFail "HH"
       let fractionMultiplier = pown 10L (7 - fractionLength)
       CharSpanParser<DateTime>(fun span ->
-        let fraction = parseInt32 (span.Slice(fractionIndex, fractionLength))
-        let second = parseInt32 (span.Slice(secondIndex, secondLength))
-        let minute = parseInt32 (span.Slice(minuteIndex, minuteLength))
-        let hour = parseInt32 (span.Slice(hourIndex, hourLength))
-        let day = parseInt32 (span.Slice(dayIndex, dayLength))
-        let month = parseInt32 (span.Slice(monthIndex, monthLength))
-        let year = parseInt32 (span.Slice(yearIndex, yearLength))
+        let fraction = parseInt (span.Slice(fractionIndex, fractionLength))
+        let second = parseInt (span.Slice(secondIndex, secondLength))
+        let minute = parseInt (span.Slice(minuteIndex, minuteLength))
+        let hour = parseInt (span.Slice(hourIndex, hourLength))
+        let day = parseInt (span.Slice(dayIndex, dayLength))
+        let month = parseInt (span.Slice(monthIndex, monthLength))
+        let year = parseInt (span.Slice(yearIndex, yearLength))
         let dt = DateTime(year, month, day, hour, minute, second, kind)
         if fraction = 0 then dt else
         let ticks = dt.Ticks + (int64 fraction) * fractionMultiplier
@@ -84,19 +76,19 @@ module Text =
       CharSpanParser<DateTime>(fun span ->
         let second =
           match secondPos with
-          | Some (i, l) -> parseInt32 (span.Slice(i, l))
+          | Some (i, l) -> parseInt (span.Slice(i, l))
           | None -> 0
         let minute = 
           match minutePos with
-          | Some (i, l) -> parseInt32 (span.Slice(i, l))
+          | Some (i, l) -> parseInt (span.Slice(i, l))
           | None -> 0
         let hour = 
           match hourPos with
-          | Some (i, l) -> parseInt32 (span.Slice(i, l))
+          | Some (i, l) -> parseInt (span.Slice(i, l))
           | None -> 0
-        let day = parseInt32 (span.Slice(dayIndex, dayLength))
-        let month = parseInt32 (span.Slice(monthIndex, monthLength))
-        let year = parseInt32 (span.Slice(yearIndex, yearLength))
+        let day = parseInt (span.Slice(dayIndex, dayLength))
+        let month = parseInt (span.Slice(monthIndex, monthLength))
+        let year = parseInt (span.Slice(yearIndex, yearLength))
         DateTime(year, month, day, hour, minute, second, kind))
 
 module File =
@@ -175,6 +167,20 @@ module Stream =
 
   let createNewFile filePath =
     new FileStream(filePath, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.Read) :> Stream
+
+  let ofUrlAsync (url: string) = async {
+    let web = new WebClient()
+    let! stream = web.OpenReadTaskAsync(url) |> Async.AwaitTask
+    web.OpenReadCompleted.Subscribe(fun _event -> web.Dispose()) |> ignore
+    return stream
+  }
+
+  let ofUrl (url: string) =
+    let web = new WebClient()
+    let stream = web.OpenRead(url)
+    web.OpenReadCompleted.Subscribe(fun _event -> web.Dispose()) |> ignore
+    stream
+    
 
 module TextReader =
   let ofStreamWith encoding bufferSize (stream: Stream) =

@@ -1,17 +1,21 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.1</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="IO.fs" />
-    <Compile Include="Csv.fs" />
-    <Compile Include="DataSets.fs" />
+    <Compile Include="Program.fs" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="PolyCoder.Preamble" Version="0.0.13" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\PolyCoder.IO.Fxcm\PolyCoder.IO.Fxcm.fsproj" />
+    <ProjectReference Include="..\PolyCoder.IO\PolyCoder.IO.fsproj" />
   </ItemGroup>
 
   <ItemGroup>
